@@ -17,13 +17,14 @@ from utils import patientid_map_label, patientid_map_admissionid_and_time, \
 
 raw_data_folder = 'data'
 out_data_folder = 'result'
+test_proportion = 0.2
 
 
 admission_file = os.path.join(raw_data_folder, 'ADMISSIONS.csv')
 diagnosis_file = os.path.join(raw_data_folder, 'DIAGNOSES_ICD.csv')
 patients_file = os.path.join(raw_data_folder, 'PATIENTS.csv')
 output_file = os.path.join(out_data_folder, 'output-icd9code')
-
+output3digit_file = os.path.join(out_data_folder, 'output3digit')
 
 
 if __name__ == '__main__':
@@ -62,8 +63,12 @@ if __name__ == '__main__':
 	time_list = [separate_symbol_between_visit.join([str(i) for i in time]) for time in time_list]
 
 	seq_idx_lst = lst_to_string(seq_idx_lst)
-	seq3digit_lst = lst_to_string(seq3digit_lst)
+	seq3digit_idx_lst = lst_to_string(seq3digit_idx_lst)
 
+
+
+	### icd9-code
+	'''
 	lines = [ str(patient_id) + separate_symbol \
 			  + timestamp + separate_symbol \
 			  + seq + separate_symbol \
@@ -74,7 +79,26 @@ if __name__ == '__main__':
 	fout = open(output_file, 'w')
 	for line in lines:
 		fout.write(line)
+	'''
 
+	### icd9-3digit-code
+	lines = [ str(patient_id) + separate_symbol \
+			  + timestamp + separate_symbol \
+			  + seq + separate_symbol \
+			  + str(label) + '\n'
+				for patient_id, timestamp, seq, label 
+				in zip(patient_id_lst, time_list, seq3digit_idx_lst, label_lst)]
+
+
+
+	train_line, test_line = train_test_split(lines, test_size = test_proportion)
+	with open(output3digit_file + '_train', 'w') as fout:
+		for line in train_line:
+			fout.write(line)
+
+	with open(output3digit_file + '_test', 'w') as fout:
+		for line in test_line:
+			fout.write(line)
 
 
 

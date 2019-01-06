@@ -2,11 +2,10 @@ from datetime import datetime
 
 
 minimum_admission_to_throw = 2
-today = datetime.strptime('2025-01-01', '%Y-%m-%d')
+today = datetime.strptime('2125-01-01', '%Y-%m-%d')
 separate_symbol_in_visit = ' '
 separate_symbol_between_visit = ','
 separate_symbol = '\t'
-
 
 
 def convert_to_icd9(dx_str):
@@ -146,6 +145,8 @@ def update_seq(seqs):
 	from collections import defaultdict
 	icdcode2idx = defaultdict(lambda: len(icdcode2idx))
 	new_seqs = [[[icdcode2idx[j] for j in admis]  for admis in seq] for seq in seqs]
+	print('number of code is {}'.format(len(icdcode2idx)))
+	#print(new_seqs)
 	return new_seqs
 
 
