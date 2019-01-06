@@ -1,7 +1,13 @@
 from datetime import datetime
 
 
-minimum_admission_to_throw = 5
+minimum_admission_to_throw = 2
+today = datetime.strptime('2025-01-01', '%Y-%m-%d')
+separate_symbol_in_visit = ' '
+separate_symbol_between_visit = ','
+separate_symbol = '\t'
+
+
 
 def convert_to_icd9(dx_str):
 	if dx_str.startswith('E'):
@@ -122,8 +128,8 @@ def generate_whole_list(patient_id_2_icd_and_time, patient_id_2_icd3digit_and_ti
 		label_lst.append(patient_id_2_label[patient_id])
 		seq = [i[1] for i in visits]
 		times = [i[0] for i in visits]
-	seq_lst.append(seq)
-	time_list.append(times)
+		seq_lst.append(seq)
+		time_list.append(times)
 
 	for patient_id, visits in patient_id_2_icd3digit_and_time.items():
 		seq = [i[1] for i in visits]
@@ -132,45 +138,73 @@ def generate_whole_list(patient_id_2_icd_and_time, patient_id_2_icd3digit_and_ti
 	return patient_id_lst, time_list, seq_lst, seq3digit_lst, label_lst
 
 
+def update_seq(seqs):
+	"""
+		old seq are composed of ICD9 code.
+		new seq are composed of index, from 0, 1, 2, ...
+	"""
+	from collections import defaultdict
+	icdcode2idx = defaultdict(lambda: len(icdcode2idx))
+	new_seqs = [[[icdcode2idx[j] for j in admis]  for admis in seq] for seq in seqs]
+	return new_seqs
+
+
+def date_to_time(time_list):
+	return [[(today - date).days for date in j] for j in time_list]
 
 
 
+def lst_to_string(seq_idx_lst):
 
+	f1 = lambda x: separate_symbol_in_visit.join(list(map(lambda y:str(y), x)))
+	"""
+		f1: [1,2,3] => '1 2 3'
+	"""
+	f2 = lambda x: separate_symbol_between_visit.join(list(map(f1, x)))
+	"""
+		[[1,2,3], [2,3,4]] =>  '1 2 3,2 3 4'
+		
+	"""
+	return list(map(f2, seq_idx_lst))
 
-    print('Converting strSeqs to intSeqs, and making types')
-    types = {}
-    new_seqs = []
-    for patient in seqs:
-        new_patient = []
-        for visit in patient:
-            new_visit = []
-            for code in visit:
-                if code in types:
-                    new_visit.append(types[code])
-                else:
-                    types[code] = len(types)
-                    new_visit.append(types[code])
-            new_patient.append(new_visit)
-        new_seqs.append(new_patient)
-
-    print('Converting strSeqs to intSeqs, and making types for 3digit ICD9 code')
-    types_3digit = {}
-    new_seqs_3digit = []
-    for patient in seqs_3digit:
-        new_patient = []
-        for visit in patient:
-            new_visit = []
-            for code in set(visit):
-                if code in types_3digit:
-                    new_visit.append(types_3digit[code])
-                else:
-                    types_3digit[code] = len(types_3digit)
-                    new_visit.append(types_3digit[code])
-            new_patient.append(new_visit)
-        new_seqs_3digit.append(new_patient)
+'''
+if __name__ == "__main__":
+	a = [[[1,2,3], [2,3,4]], [[1,2,3], [2,3,4]]]
+	print(lst_to_string(a))
+'''
 
 
 
+'''
+
+    print('Making additional modifications to the data')
+    #Compute time to today as to_event column
+    today = datetime.strptime('2025-01-01', '%Y-%m-%d')
+    to_event = [[(today-date).days for date in patient] for patient in dates]
+    #Compute time of the day when the person was admitted as the numeric column of size 1
+    numerics = [[[date.hour * 60 + date.minute - 720] for date in patient] for patient in dates]
+    #Add this feature to dictionary but leave 1 index empty for PADDING
+    types['Time of visit'] = len(types)+1
+    types_3digit['Time of visit'] = len(types_3digit)+1
+    #Compute sorting indicies
+    sort_indicies = np.argsort(list(map(len, to_event)))
+    #Create the dataframes of data and sort them according to number of visits per patient
+    all_data = pd.DataFrame(data={'codes': new_seqs,
+                                  'to_event': to_event,
+                                  'numerics': numerics}
+                           ,columns=['codes', 'to_event', 'numerics'])\
+                          .iloc[sort_indicies].reset_index()
+    all_data_3digit = pd.DataFrame(data={'codes': new_seqs_3digit,
+                                         'to_event': to_event,
+                                         'numerics': numerics}
+                                  ,columns=['codes', 'to_event', 'numerics'])\
+                                 .iloc[sort_indicies].reset_index()
+    all_targets = pd.DataFrame(data={'target': morts}
+                               ,columns=['target'])\
+                              .iloc[sort_indicies].reset_index()
+
+
+'''
 
 
 
