@@ -3,6 +3,7 @@ from datetime import datetime
 from utils import convert_to_3digit_icd9
 from time import time 
 
+filename_lst = ['Mdcri113.csv', 'Mdcri133.csv', 'Mdcri123.csv', 'Mdcri142.csv']
 filename = 'Mdcri113.csv'
 file_output = 'output'
 code2idx_file = 'code2idx'
@@ -22,9 +23,14 @@ maximum_visit = 20
 
 
 time_bgn = time()
-with open(filename, 'r') as fin:
-	lines = fin.readlines()[1:]
+lines = []
+for filename in filename_lst:
+	fname = os.path.join(data_folder, filename)
+	fin = open(fname, 'r')
+	lines += fin.readlines()[1:]
 	### remove the first line
+
+def process(lines):
 	adm_code_set = set()  ### the whole icd9 code
 	patient_dict = dict()
 	for j,line in enumerate(lines): 
@@ -41,7 +47,6 @@ with open(filename, 'r') as fin:
 		month, days, year = [int(i) for i in line[6].split('/')]
 		day = datetime(year, month, days)
 
-
 		### 3 admission code 
 		adm_code = [line[i] for i in adm_code_idx]
 		### filter out ''
@@ -52,7 +57,6 @@ with open(filename, 'r') as fin:
 			patient_dict[enrol_id][day] = adm_code
 		else:
 			patient_dict[enrol_id][day] += adm_code
-
 
 		adm_code_set = adm_code_set.union(set(adm_code))  ### the whole icd9 code
 
@@ -90,7 +94,8 @@ with open(filename, 'r') as fin:
 
 
 
-
+if __name__ == '__main__':
+	process(lines)
 
 
 
