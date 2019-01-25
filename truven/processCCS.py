@@ -2,11 +2,13 @@ import os
 from datetime import datetime
 from utils import convert_to_3digit_icd9
 from time import time 
+from ccs import icdcode2idx
+
 
 filename_lst = ['Mdcri113.csv', 'Mdcri133.csv', 'Mdcri123.csv', 'Mdcri142.csv']
 filename = 'Mdcri113.csv'
-file_output = 'output'
-code2idx_file = 'code2idx'
+file_output = 'output_ccs'
+code2idx_file = 'code2idx_ccs'
 data_folder = 'data'
 result_folder = 'result'
 separate_symbol = ','
@@ -17,8 +19,6 @@ adm_code_idx = list(range(35,50))
 
 minimum_visit = 5 
 maximum_visit = 20
-
-
 
 
 
@@ -51,8 +51,9 @@ def process(lines):
 		adm_code = [line[i] for i in adm_code_idx]
 		### filter out ''
 		adm_code = list(filter(None, adm_code))   
-		### icd9 3digits
-		adm_code = list(map(convert_to_3digit_icd9, adm_code)) 
+		### CCS 
+		convert_f = lambda x:icdcode2idx[x]
+		adm_code = list(map(convert_f, adm_code)) 
 		if len(adm_code) == 0: continue ### throw empty data 
 		if day not in patient_dict[enrol_id]: 
 			patient_dict[enrol_id][day] = adm_code
@@ -88,10 +89,7 @@ def process(lines):
 		####  [[1,2], [3,4]] => '1 2;3 4'  list of list => string 
 		fout.write(string + '\n')
 	fout.close()
-	fout = open(code2idx_file, 'w')
-	for code, idx in code2idx.items():
-		fout.write(code + '\t' + str(idx) + '\n')
-	fout.close()
+
 
 
 
