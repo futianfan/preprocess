@@ -84,6 +84,23 @@ def admissionid_map_icdcode(diagnosis_file):
 		admission_id_2_icd_3digit[admission_id] += [icd9_3_digits_code]
 	return admission_id_2_icd, admission_id_2_icd_3digit
 
+def admissionid_map_ccs(diagnosis_file):
+	from collections import defaultdict
+	from ccs import icdcode2idx
+	admission_id_2_ccscode = defaultdict(lambda:[])
+	lines = open(diagnosis_file, 'r').readlines()
+	lines = lines[1:]
+	for line in lines:
+		tokens = line.strip().split(',')
+		admission_id = int(tokens[2])
+		if tokens[4][1:-1] == '':
+			continue 
+		ccs_code = icdcode2idx[tokens[4][1:-1]]
+		admission_id_2_ccscode[admission_id] += [ccs_code]
+	return admission_id_2_ccscode
+
+
+
 
 
 def patientid_map_icdcode_and_time(
@@ -112,6 +129,23 @@ def patientid_map_icdcode_and_time(
 	return patient_id_2_icd_and_time, patient_id_2_icd3digit_and_time
 
 
+def patientid_map_ccscode_and_time(
+				patient_id_2_admission, 
+				admission_id_2_time, 
+				admission_id_2_ccscode):
+	from collections import defaultdict
+	patient_id_2_ccs_and_time = defaultdict(lambda: [])
+
+	for patient_id, admission_id_lst in patient_id_2_admission.items():
+		if len(admission_id_lst) < minimum_admission_to_throw:   
+			continue
+		patient_id_2_ccs_and_time[patient_id] = sorted([
+												(admission_id_2_time[admission_id], admission_id_2_ccscode[admission_id]) 
+												for admission_id in admission_id_lst
+											 ])
+	return patient_id_2_ccs_and_time
+
+
 
 
 
@@ -137,6 +171,25 @@ def generate_whole_list(patient_id_2_icd_and_time, patient_id_2_icd3digit_and_ti
 	return patient_id_lst, time_list, seq_lst, seq3digit_lst, label_lst
 
 
+def generate_whole_list_ccs(patient_id_2_ccs_and_time, patient_id_2_label):
+	patient_id_lst = []
+	time_list = []
+	seq_lst = []
+	label_lst = []
+
+	for patient_id, visits in patient_id_2_ccs_and_time.items():
+		patient_id_lst.append(patient_id)
+		label_lst.append(patient_id_2_label[patient_id])
+		seq = [i[1] for i in visits]
+		times = [i[0] for i in visits]
+		seq_lst.append(seq)
+		time_list.append(times)
+
+	return patient_id_lst, time_list, seq_lst, label_lst
+
+
+
+
 def update_seq(seqs):
 	"""
 		old seq are composed of ICD9 code.
@@ -146,6 +199,11 @@ def update_seq(seqs):
 	icdcode2idx = defaultdict(lambda: len(icdcode2idx))
 	new_seqs = [[[icdcode2idx[j] for j in admis]  for admis in seq] for seq in seqs]
 	print('number of code is {}'.format(len(icdcode2idx)))
+	idx2icdcode = {v:k for k,v in icdcode2idx.items()}
+	fout = open('result/code_map.txt', 'w')
+	for i in range(len(icdcode2idx)):
+		fout.write(idx2icdcode[i] + '\n')
+	fout.close()
 	#print(new_seqs)
 	return new_seqs
 
